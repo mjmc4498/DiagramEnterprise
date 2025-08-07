@@ -1,23 +1,27 @@
 import './App.css';
 import React, { useState } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
+import Palette from './Palette';
+import ClassShape from './ClassShape';
 
 function App() {
+  const [diagramType, setDiagramType] = useState('ClassDiagram');
   const [rectangles, setRectangles] = useState([]);
   const [connectors, setConnectors] = useState([]);
   const [connectorMode, setConnectorMode] = useState(false);
   const [pendingConnector, setPendingConnector] = useState(null);
 
-  const addRectangle = () => {
-    const newRectangle = {
-      x: Math.random() * (window.innerWidth - 100),
-      y: Math.random() * (window.innerHeight - 100),
-      width: 100,
+  const addShape = (shapeType) => {
+    const newShape = {
+      type: shapeType,
+      x: Math.random() * (window.innerWidth - 200),
+      y: Math.random() * (window.innerHeight - 200),
+      width: 150,
       height: 100,
-      fill: 'lightblue',
-      id: `rect${rectangles.length + 1}`,
+      fill: 'white',
+      id: `shape${rectangles.length + 1}`,
     };
-    setRectangles([...rectangles, newRectangle]);
+    setRectangles([...rectangles, newShape]);
   };
 
   const getCenter = (shape) => {
@@ -53,30 +57,33 @@ function App() {
 
   return (
     <div className="App">
-      <button onClick={addRectangle}>Add Class</button>
-      <button onClick={() => setConnectorMode(!connectorMode)}>
-        {connectorMode ? 'Cancel Connector' : 'Add Connector'}
-      </button>
-      <Stage width={window.innerWidth} height={window.innerHeight}>
-        <Layer>
-          {connectors.map((conn) => (
+      <Palette onAddShape={addShape} />
+      <div className="main-content">
+        <button onClick={() => setConnectorMode(!connectorMode)}>
+          {connectorMode ? 'Cancel Connector' : 'Add Connector'}
+        </button>
+        <Stage width={window.innerWidth - 200} height={window.innerHeight}>
+          <Layer>
+            {connectors.map((conn) => (
             <Line
               key={conn.id}
               points={conn.points}
               stroke="black"
             />
           ))}
-          {rectangles.map((rect, i) => (
-            <Rect
-              key={rect.id}
-              onClick={() => handleShapeClick(rect.id)}
-              x={rect.x}
-              y={rect.y}
-              width={rect.width}
-              height={rect.height}
-              fill={rect.fill}
-              draggable
-              onDragMove={(e) => {
+          {rectangles.map((rect, i) => {
+            const shapeProps = {
+              key: rect.id,
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+              fill: rect.fill,
+              type: rect.type,
+              id: rect.id,
+            };
+
+            const onDragMove = (e) => {
                 const newRects = rectangles.slice();
                 newRects[i] = {
                   ...rect,
@@ -102,8 +109,9 @@ function App() {
                   return conn;
                 });
                 setConnectors(newConnectors);
-              }}
-              onDragEnd={(e) => {
+              };
+
+            const onDragEnd = (e) => {
                 const newRects = rectangles.slice();
                 newRects[i] = {
                   ...rect,
@@ -111,9 +119,29 @@ function App() {
                   y: e.target.y(),
                 };
                 setRectangles(newRects);
-              }}
-            />
-          ))}
+              };
+
+            if (rect.type === 'Class') {
+              return (
+                <ClassShape
+                  shapeProps={shapeProps}
+                  onDragMove={onDragMove}
+                  onDragEnd={onDragEnd}
+                  onClick={() => handleShapeClick(rect.id)}
+                />
+              );
+            }
+
+            return (
+              <Rect
+                {...shapeProps}
+                draggable
+                onDragMove={onDragMove}
+                onDragEnd={onDragEnd}
+                onClick={() => handleShapeClick(rect.id)}
+              />
+            );
+          })}
         </Layer>
       </Stage>
     </div>

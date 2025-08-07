@@ -1,0 +1,13 @@
+.App {
+  display: flex;
+}
+
+.palette {
+  width: 200px;
+  padding: 10px;
+  border-right: 1px solid #ccc;
+}
+
+.main-content {
+  flex-grow: 1;
+}
