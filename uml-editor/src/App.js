@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
 import Palette from './Palette';
 import ClassShape from './ClassShape';
@@ -7,11 +7,40 @@ import PropertiesPanel from './PropertiesPanel';
 
 function App() {
   const [diagramType, setDiagramType] = useState('ClassDiagram');
-  const [rectangles, setRectangles] = useState([]);
-  const [connectors, setConnectors] = useState([]);
+  const [rectangles, setRectangles] = useState(() => {
+    const savedRectangles = localStorage.getItem('uml-editor-rectangles');
+    return savedRectangles ? JSON.parse(savedRectangles) : [];
+  });
+  const [connectors, setConnectors] = useState(() => {
+    const savedConnectors = localStorage.getItem('uml-editor-connectors');
+    return savedConnectors ? JSON.parse(savedConnectors) : [];
+  });
   const [connectorMode, setConnectorMode] = useState(false);
   const [pendingConnector, setPendingConnector] = useState(null);
   const [selectedShape, setSelectedShape] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem('uml-editor-rectangles', JSON.stringify(rectangles));
+    localStorage.setItem('uml-editor-connectors', JSON.stringify(connectors));
+  }, [rectangles, connectors]);
+
+  const saveState = () => {
+    localStorage.setItem('uml-editor-rectangles', JSON.stringify(rectangles));
+    localStorage.setItem('uml-editor-connectors', JSON.stringify(connectors));
+    alert('Diagram saved!');
+  };
+
+  const loadState = () => {
+    const savedRectangles = localStorage.getItem('uml-editor-rectangles');
+    if (savedRectangles) {
+      setRectangles(JSON.parse(savedRectangles));
+    }
+    const savedConnectors = localStorage.getItem('uml-editor-connectors');
+    if (savedConnectors) {
+      setConnectors(JSON.parse(savedConnectors));
+    }
+    alert('Diagram loaded!');
+  };
 
   const addShape = (shapeType) => {
     const newShape = {
@@ -75,9 +104,13 @@ function App() {
     <div className="App">
       <Palette onAddShape={addShape} />
       <div className="main-content">
-        <button onClick={() => setConnectorMode(!connectorMode)}>
-          {connectorMode ? 'Cancel Connector' : 'Add Connector'}
-        </button>
+        <div className="toolbar">
+          <button onClick={() => setConnectorMode(!connectorMode)}>
+            {connectorMode ? 'Cancel Connector' : 'Add Connector'}
+          </button>
+          <button onClick={saveState}>Save</button>
+          <button onClick={loadState}>Load</button>
+        </div>
         <Stage width={window.innerWidth - 400} height={window.innerHeight}>
           <Layer>
             {connectors.map((conn) => (

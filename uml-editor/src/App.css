@@ -17,3 +17,8 @@
 .main-content {
   flex-grow: 1;
 }
+
+.toolbar {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
