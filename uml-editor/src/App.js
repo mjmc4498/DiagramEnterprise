@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
 import Palette from './Palette';
 import ClassShape from './ClassShape';
+import PropertiesPanel from './PropertiesPanel';
 
 function App() {
   const [diagramType, setDiagramType] = useState('ClassDiagram');
@@ -10,10 +11,12 @@ function App() {
   const [connectors, setConnectors] = useState([]);
   const [connectorMode, setConnectorMode] = useState(false);
   const [pendingConnector, setPendingConnector] = useState(null);
+  const [selectedShape, setSelectedShape] = useState(null);
 
   const addShape = (shapeType) => {
     const newShape = {
       type: shapeType,
+      text: shapeType,
       x: Math.random() * (window.innerWidth - 200),
       y: Math.random() * (window.innerHeight - 200),
       width: 150,
@@ -24,6 +27,16 @@ function App() {
     setRectangles([...rectangles, newShape]);
   };
 
+  const handleTextChange = (shapeId, newText) => {
+    const newRects = rectangles.map((rect) => {
+      if (rect.id === shapeId) {
+        return { ...rect, text: newText };
+      }
+      return rect;
+    });
+    setRectangles(newRects);
+  };
+
   const getCenter = (shape) => {
     return {
       x: shape.x + shape.width / 2,
@@ -32,26 +45,29 @@ function App() {
   };
 
   const handleShapeClick = (shapeId) => {
-    if (!connectorMode) return;
+    if (connectorMode) {
+      if (!pendingConnector) {
+        setPendingConnector(shapeId);
+      } else {
+        const fromShape = rectangles.find((r) => r.id === pendingConnector);
+        const toShape = rectangles.find((r) => r.id === shapeId);
+        const fromCenter = getCenter(fromShape);
+        const toCenter = getCenter(toShape);
 
-    if (!pendingConnector) {
-      setPendingConnector(shapeId);
+        const newConnector = {
+          id: `conn${connectors.length + 1}`,
+          from: pendingConnector,
+          to: shapeId,
+          points: [fromCenter.x, fromCenter.y, toCenter.x, toCenter.y],
+        };
+
+        setConnectors([...connectors, newConnector]);
+        setPendingConnector(null);
+        setConnectorMode(false);
+      }
     } else {
-      const fromShape = rectangles.find((r) => r.id === pendingConnector);
-      const toShape = rectangles.find((r) => r.id === shapeId);
-      const fromCenter = getCenter(fromShape);
-      const toCenter = getCenter(toShape);
-
-      const newConnector = {
-        id: `conn${connectors.length + 1}`,
-        from: pendingConnector,
-        to: shapeId,
-        points: [fromCenter.x, fromCenter.y, toCenter.x, toCenter.y],
-      };
-
-      setConnectors([...connectors, newConnector]);
-      setPendingConnector(null);
-      setConnectorMode(false);
+      const shape = rectangles.find((r) => r.id === shapeId);
+      setSelectedShape(shape);
     }
   };
 
@@ -62,7 +78,7 @@ function App() {
         <button onClick={() => setConnectorMode(!connectorMode)}>
           {connectorMode ? 'Cancel Connector' : 'Add Connector'}
         </button>
-        <Stage width={window.innerWidth - 200} height={window.innerHeight}>
+        <Stage width={window.innerWidth - 400} height={window.innerHeight}>
           <Layer>
             {connectors.map((conn) => (
             <Line
@@ -128,6 +144,7 @@ function App() {
                   onDragMove={onDragMove}
                   onDragEnd={onDragEnd}
                   onClick={() => handleShapeClick(rect.id)}
+                  onTextChange={handleTextChange}
                 />
               );
             }
@@ -145,6 +162,11 @@ function App() {
         </Layer>
       </Stage>
     </div>
+    <PropertiesPanel
+      selectedShape={selectedShape}
+      onTextChange={handleTextChange}
+    />
+  </div>
   );
 }
 
