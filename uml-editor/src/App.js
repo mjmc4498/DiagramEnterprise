@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
 import Palette from './Palette';
 import ClassShape from './ClassShape';
@@ -18,10 +18,32 @@ function App() {
   const [connectorMode, setConnectorMode] = useState(false);
   const [pendingConnector, setPendingConnector] = useState(null);
   const [selectedShape, setSelectedShape] = useState(null);
+  const [history, setHistory] = useState([]);
+  const stageRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem('uml-editor-rectangles', JSON.stringify(rectangles));
     localStorage.setItem('uml-editor-connectors', JSON.stringify(connectors));
+  }, [rectangles, connectors]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveState();
+      } else if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        if (history.length > 0) {
+          const previousState = history[history.length - 1];
+          setRectangles(previousState);
+          setHistory(history.slice(0, history.length - 1));
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [rectangles, connectors]);
 
   const saveState = () => {
@@ -42,7 +64,18 @@ function App() {
     alert('Diagram loaded!');
   };
 
+  const exportAsPNG = () => {
+    const uri = stageRef.current.toDataURL();
+    const link = document.createElement('a');
+    link.download = 'diagram.png';
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const addShape = (shapeType) => {
+    setHistory([...history, rectangles]);
     const newShape = {
       type: shapeType,
       text: shapeType,
@@ -110,8 +143,9 @@ function App() {
           </button>
           <button onClick={saveState}>Save</button>
           <button onClick={loadState}>Load</button>
+          <button onClick={exportAsPNG}>Export as PNG</button>
         </div>
-        <Stage width={window.innerWidth - 400} height={window.innerHeight}>
+        <Stage ref={stageRef} width={window.innerWidth - 400} height={window.innerHeight}>
           <Layer>
             {connectors.map((conn) => (
             <Line
