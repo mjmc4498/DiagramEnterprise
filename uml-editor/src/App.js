@@ -6,6 +6,9 @@ import ClassShape from './ClassShape';
 import PropertiesPanel from './PropertiesPanel';
 
 function App() {
+  // =================================================================
+  // Model
+  // =================================================================
   const [diagramType, setDiagramType] = useState('ClassDiagram');
   const [rectangles, setRectangles] = useState(() => {
     const savedRectangles = localStorage.getItem('uml-editor-rectangles');
@@ -21,6 +24,9 @@ function App() {
   const [history, setHistory] = useState([]);
   const stageRef = useRef(null);
 
+  // =================================================================
+  // Controller
+  // =================================================================
   useEffect(() => {
     localStorage.setItem('uml-editor-rectangles', JSON.stringify(rectangles));
     localStorage.setItem('uml-editor-connectors', JSON.stringify(connectors));
@@ -133,6 +139,9 @@ function App() {
     }
   };
 
+  // =================================================================
+  // View
+  // =================================================================
   return (
     <div className="App">
       <Palette onAddShape={addShape} />
